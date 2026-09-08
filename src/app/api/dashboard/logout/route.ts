@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { DASHBOARD_COOKIE } from "@/lib/dashboard-constants";
+import { clearAuthCookies } from "@/lib/dashboard-auth";
 
 export async function POST() {
-  const cookieStore = await cookies();
-  cookieStore.delete(DASHBOARD_COOKIE);
-  return NextResponse.json({ ok: true });
+  const response = NextResponse.json({ ok: true });
+  clearAuthCookies(response);
+  return response;
 }

@@ -7,7 +7,7 @@ import {
 import { isSupabaseConfigured } from "@/lib/supabase/admin";
 import type { AnalyticsPeriod } from "@/lib/analytics/types";
 import { listLeads } from "@/lib/leads/storage";
-import { getDashboardUser } from "@/lib/dashboard-auth";
+import { requireDashboardUser } from "@/lib/dashboard-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,9 +17,9 @@ function parsePeriod(value: string | null): AnalyticsPeriod {
 }
 
 export async function GET(request: Request) {
-  const user = await getDashboardUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  const auth = await requireDashboardUser();
+  if (!auth.ok) {
+    return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status });
   }
 
   const { searchParams } = new URL(request.url);

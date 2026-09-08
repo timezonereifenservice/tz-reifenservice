@@ -1,29 +1,28 @@
-import { LeadsPanel } from "@/components/dashboard/leads-panel";
+import { UsersPanel } from "@/components/dashboard/users-panel";
 import { requireNavAccess } from "@/lib/dashboard-require-nav";
-import { listLeads } from "@/lib/leads/storage";
+import { listUsers } from "@/lib/dashboard-users/storage";
 
 export const dynamic = "force-dynamic";
 
-export default async function LeadsPage() {
-  await requireNavAccess("leads");
-  const leads = await listLeads();
+export default async function UsersPage() {
+  const user = await requireNavAccess("users");
+  const users = await listUsers();
 
   return (
     <div className="space-y-6">
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/50">
-          Posteingang
+          Verwaltung
         </p>
         <h2 className="mt-1 text-xl font-extrabold text-brand-dark sm:text-2xl">
-          Alle Website-Leads
+          Benutzer
         </h2>
         <p className="mt-1 text-sm text-foreground/55">
-          Kontaktformulare, WhatsApp, Anrufe und Leistungs-Anfragen von
-          timezone-reifenservice.de.
+          Dashboard-Konten erstellen und verwalten. Nur für Admins.
         </p>
       </div>
 
-      <LeadsPanel leads={leads} />
+      <UsersPanel initialUsers={users} currentUserId={user.id} />
     </div>
   );
 }

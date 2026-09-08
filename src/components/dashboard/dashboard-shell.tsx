@@ -3,19 +3,20 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, Wrench, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { BrandLogo } from "@/components/shared/brand-logo";
 import { siteConfig } from "@/config/site";
 import { DASHBOARD_PATH } from "@/lib/dashboard-constants";
 import {
   dashboardLogoutItem,
-  dashboardNavItems,
   getDashboardPageTitle,
+  getNavItemsForRole,
   getUserDisplayName,
 } from "@/lib/dashboard-nav";
 import { cn } from "@/lib/utils";
 
 type DashboardShellProps = {
-  user: { email: string; name?: string };
+  user: { id: string; email: string; name?: string; role?: string };
   children: React.ReactNode;
 };
 
@@ -37,6 +38,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
   const pageTitle = getDashboardPageTitle(pathname);
   const displayName = user.name?.trim() || getUserDisplayName(user.email);
   const initials = getInitials(displayName);
+  const navItems = getNavItemsForRole(user.role);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -63,19 +65,16 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
   const sidebarContent = (
     <>
       <div className="flex h-16 items-center border-b border-white/10 px-5">
-        <Link href="/dashboard/overview" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-accent text-brand-dark">
-            <Wrench className="h-5 w-5" aria-hidden />
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-white">Time Zone</p>
-            <p className="truncate text-[10px] text-white/50">Dashboard</p>
-          </div>
-        </Link>
+        <BrandLogo
+          href="/dashboard/overview"
+          size="sm"
+          subtitle="Dashboard"
+          inverted
+        />
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        {dashboardNavItems.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);

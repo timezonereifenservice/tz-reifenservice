@@ -1,8 +1,10 @@
 export const DASHBOARD_PATH = "/dashboard";
-export const DASHBOARD_COOKIE = "tz-dashboard-session";
 
-/** Demo credentials — replace with real auth + DB users later. */
-export const DEMO_LOGIN = {
-  email: "admin@timezone-reifenservice.de",
-  password: "tz-admin-2026",
-} as const;
+export const DASHBOARD_ACCESS_COOKIE = "tz_dashboard_access";
+export const DASHBOARD_REFRESH_COOKIE = "tz_dashboard_refresh";
+
+/** Access JWT — 1 day */
+export const ACCESS_TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24;
+
+/** Refresh JWT — 7 days */
+export const REFRESH_TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;

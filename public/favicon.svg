@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Time Zone Reifenservice">
+  <rect width="512" height="512" rx="96" fill="#e63946"/>
+  <text
+    x="256"
+    y="300"
+    text-anchor="middle"
+    font-family="Arial Black, Arial, sans-serif"
+    font-size="220"
+    font-weight="900"
+    font-style="italic"
+    fill="#ffffff"
+  >TZ</text>
+  <path
+    fill="#e63946"
+    d="M168 318c18-8 34-8 52 0l-8 24c-14-6-28-6-42 0l8-24z"
+  />
+  <path
+    fill="#ffffff"
+    opacity="0.15"
+    d="M96 96h320v48H96z"
+  />
+</svg>

@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { BarChart3, MousePointerClick, Users } from "lucide-react";
 import { siteConfig } from "@/config/site";
-import { getMockAnalyticsSnapshot } from "@/lib/analytics/mock-analytics";
+import { requireNavAccess } from "@/lib/dashboard-require-nav";
 import { listLeads } from "@/lib/leads/storage";
+import { getMockAnalyticsSnapshot } from "@/lib/analytics/mock-analytics";
 
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
+  await requireNavAccess("overview");
   const [leads] = await Promise.all([listLeads()]);
   const snapshot = getMockAnalyticsSnapshot("30d");
   const newLeads = leads.filter((l) => l.status === "NEW").length;

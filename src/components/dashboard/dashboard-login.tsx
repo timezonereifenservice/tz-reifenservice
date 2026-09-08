@@ -2,7 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2, Wrench } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { BrandLogo } from "@/components/shared/brand-logo";
 import { siteConfig } from "@/config/site";
 
 export function DashboardLogin() {
@@ -46,14 +47,8 @@ export function DashboardLogin() {
     <div className="flex min-h-dvh bg-white">
       <div className="flex w-full flex-col justify-center px-8 py-12 sm:px-12 lg:w-[42%] lg:px-16 xl:px-20">
         <div className="mx-auto w-full max-w-[380px]">
-          <div className="mb-10 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-dark text-brand-accent">
-              <Wrench className="h-6 w-6" aria-hidden />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-brand-dark">Time Zone</p>
-              <p className="text-xs text-foreground/55">Reifenservice Dashboard</p>
-            </div>
+          <div className="mb-10">
+            <BrandLogo size="lg" subtitle="Reifenservice Dashboard" />
           </div>
 
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/50">
@@ -129,9 +124,6 @@ export function DashboardLogin() {
             </button>
           </form>
 
-          <p className="mt-6 text-xs text-foreground/40">
-            Demo: admin@timezone-reifenservice.de / tz-admin-2026
-          </p>
         </div>
       </div>
 
