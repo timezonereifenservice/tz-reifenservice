@@ -1,9 +1,10 @@
+import { countryLabel } from "@/lib/analytics/client-context";
 import {
   CTA_LABELS,
   formKeyLabel,
-  PAGE_LABELS,
   TZ_SERVICES,
 } from "@/lib/analytics/constants";
+import { matchesServicePath, normalizePath, pageLabel } from "@/lib/analytics/paths";
 import { getEmptyAnalyticsSnapshot } from "@/lib/analytics/empty-analytics";
 import { listAnalyticsEventsSince } from "@/lib/analytics/storage";
 import type {
@@ -81,11 +82,6 @@ function buildBreakdown(
     .sort((a, b) => b.visitors - a.visitors);
 }
 
-function normalizePath(path: string) {
-  const trimmed = path.split("?")[0]?.split("#")[0] || "/";
-  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-}
-
 export async function getAnalyticsSnapshot(
   period: AnalyticsPeriod,
 ): Promise<WebsiteAnalyticsSnapshot> {
@@ -134,7 +130,7 @@ export async function getAnalyticsSnapshot(
   const topPages = [...pathViews.entries()]
     .map(([path, views]) => ({
       path,
-      label: PAGE_LABELS[path] ?? path,
+      label: pageLabel(path),
       views,
       engagementRate: 0,
     }))
@@ -163,11 +159,11 @@ export async function getAnalyticsSnapshot(
     .sort((a, b) => b.leads - a.leads);
 
   const services = TZ_SERVICES.map((service) => {
-    const views = pageViews.filter(
-      (e) => normalizePath(e.path) === service.path,
+    const views = pageViews.filter((e) =>
+      matchesServicePath(e.path, service.path),
     ).length;
-    const leads = currentLeads.filter(
-      (l) => normalizePath(l.sourcePage) === service.path,
+    const leads = currentLeads.filter((l) =>
+      matchesServicePath(l.sourcePage, service.path),
     ).length;
     return { ...service, views, leads };
   }).sort((a, b) => b.views - a.views);
@@ -192,7 +188,7 @@ export async function getAnalyticsSnapshot(
       visitorsChangePct: pctChange(visitors, previousVisitors),
       leadsChangePct: pctChange(leadsCount, previousLeadsCount),
     },
-    countries: buildBreakdown(currentEvents, "country", (k) => k),
+    countries: buildBreakdown(currentEvents, "country", (k) => countryLabel(k)),
     devices: buildBreakdown(currentEvents, "device", (k) => k),
     browsers: buildBreakdown(currentEvents, "browser", (k) => k),
     leadSources: leadSourceRows,

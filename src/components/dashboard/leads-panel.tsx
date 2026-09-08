@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import type { LeadListItem, LeadStatus, LeadType } from "@/lib/leads/types";
@@ -41,6 +42,7 @@ type LeadsPanelProps = {
 };
 
 export function LeadsPanel({ leads }: LeadsPanelProps) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<LeadType | "all">("all");
 
@@ -128,7 +130,17 @@ export function LeadsPanel({ leads }: LeadsPanelProps) {
               {filtered.map((lead) => (
                 <tr
                   key={lead.id}
-                  className="border-b border-black/5 transition-colors hover:bg-black/[0.02]"
+                  onClick={() => router.push(`/dashboard/leads/${lead.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      router.push(`/dashboard/leads/${lead.id}`);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="link"
+                  aria-label={`Lead von ${lead.fullName || "Unbekannt"} anzeigen`}
+                  className="cursor-pointer border-b border-black/5 transition-colors hover:bg-black/[0.02]"
                 >
                   <td className="whitespace-nowrap px-4 py-3 text-foreground/60">
                     {formatDate(lead.createdAt)}

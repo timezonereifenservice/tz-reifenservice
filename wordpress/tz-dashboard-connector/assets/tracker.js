@@ -53,6 +53,13 @@
   function trackPageView() {
     if (!hasConsent()) return;
     sendAnalytics({
+      eventType: "consent",
+      consentValue: "accepted",
+      path: TZDashboard.path || window.location.pathname,
+      sessionId: readOrCreateId(SESSION_KEY),
+      visitorId: readOrCreateId(VISITOR_KEY),
+    });
+    sendAnalytics({
       eventType: "page_view",
       path: TZDashboard.path || window.location.pathname,
       referrer: document.referrer || "",

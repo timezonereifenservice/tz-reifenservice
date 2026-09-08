@@ -1,7 +1,7 @@
 export const TZ_SERVICES = [
   { id: "reifen", label: "Reifenservice", path: "/reifenservice" },
   { id: "getriebe", label: "Getriebespülung", path: "/getriebespuelung" },
-  { id: "kfz", label: "KFZ Service", path: "/kfz-service" },
+  { id: "kfz", label: "KFZ Service", path: "/kfz-services" },
   { id: "klima", label: "Klimaservice", path: "/klimaservice" },
   { id: "oel", label: "Ölwechsel", path: "/oelwechsel-service" },
   { id: "glas", label: "Autoglas Service", path: "/autoglas-service" },
@@ -32,5 +32,8 @@ export function formKeyLabel(formKey: string) {
     "service-inquiry": "Leistungs-Anfrage",
     email: "E-Mail Link",
   };
+  if (formKey.startsWith("contact-form-cf7-")) {
+    return "Contact Form 7";
+  }
   return map[formKey] ?? formKey;
 }

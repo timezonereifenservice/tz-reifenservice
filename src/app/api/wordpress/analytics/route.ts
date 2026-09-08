@@ -1,3 +1,4 @@
+import { clientContextFromRequest } from "@/lib/analytics/client-context";
 import { insertAnalyticsEvent } from "@/lib/analytics/storage";
 import type { AnalyticsEventType } from "@/lib/analytics/types";
 import { wordpressCorsJson, wordpressCorsOptions } from "@/lib/wordpress-cors";
@@ -40,6 +41,8 @@ export async function POST(request: Request) {
       return wordpressCorsJson({ ok: false, error: "ctaId required for cta_click." }, 400);
     }
 
+    const context = clientContextFromRequest(request);
+
     const event = await insertAnalyticsEvent({
       eventType,
       path: asString(body.path) || "/",
@@ -52,9 +55,9 @@ export async function POST(request: Request) {
           : undefined,
       sessionId: asString(body.sessionId),
       visitorId: asString(body.visitorId),
-      country: asString(body.country),
-      device: asString(body.device),
-      browser: asString(body.browser),
+      country: asString(body.country) || context.country,
+      device: asString(body.device) || context.device,
+      browser: asString(body.browser) || context.browser,
       meta:
         body.meta && typeof body.meta === "object"
           ? (body.meta as Record<string, unknown>)
