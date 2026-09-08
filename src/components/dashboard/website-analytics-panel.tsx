@@ -11,7 +11,7 @@ import {
   Percent,
   Users,
 } from "lucide-react";
-import { getMockAnalyticsSnapshot } from "@/lib/analytics/mock-analytics";
+import { getEmptyAnalyticsSnapshot } from "@/lib/analytics/empty-analytics";
 import type {
   AnalyticsPeriod,
   WebsiteAnalyticsSnapshot,
@@ -62,45 +62,21 @@ function SectionCard({
   title,
   description,
   children,
-  action,
 }: {
   title: string;
   description?: string;
   children: React.ReactNode;
-  action?: React.ReactNode;
 }) {
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-extrabold text-brand-dark">{title}</h2>
-          {description ? (
-            <p className="mt-1 text-sm text-foreground/55">{description}</p>
-          ) : null}
-        </div>
-        {action}
+      <div className="mb-4">
+        <h2 className="text-base font-extrabold text-brand-dark">{title}</h2>
+        {description ? (
+          <p className="mt-1 text-sm text-foreground/55">{description}</p>
+        ) : null}
       </div>
       {children}
     </section>
-  );
-}
-
-function DataSourceBadge({ source }: { source: "mock" | "live" | "mixed" }) {
-  const label =
-    source === "live" ? "Live" : source === "mixed" ? "Gemischt" : "Vorschau";
-  return (
-    <span
-      className={cn(
-        "rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1",
-        source === "live"
-          ? "bg-emerald-100 text-emerald-800 ring-emerald-600/20"
-          : source === "mixed"
-            ? "bg-amber-100 text-amber-800 ring-amber-600/20"
-            : "bg-black/[0.05] text-foreground/55 ring-black/10",
-      )}
-    >
-      {label}
-    </span>
   );
 }
 
@@ -108,14 +84,12 @@ function KpiCard({
   label,
   value,
   icon,
-  source,
   footer,
   changePct,
 }: {
   label: string;
   value: string;
   icon: React.ReactNode;
-  source: "mock" | "live" | "mixed";
   footer?: string;
   changePct?: number;
 }) {
@@ -125,10 +99,7 @@ function KpiCard({
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-foreground/50">
           {label}
         </p>
-        <div className="flex items-center gap-2">
-          <DataSourceBadge source={source} />
-          {icon}
-        </div>
+        {icon}
       </div>
       <p className="mt-2 text-3xl font-bold text-brand-dark">{value}</p>
       {changePct !== undefined ? (
@@ -143,6 +114,14 @@ function KpiCard({
   );
 }
 
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-black/10 px-4 py-10 text-center text-sm text-foreground/55">
+      {message}
+    </div>
+  );
+}
+
 export function WebsiteAnalyticsPanel({
   initialSnapshot,
   storedLeads,
@@ -150,10 +129,7 @@ export function WebsiteAnalyticsPanel({
   const [period, setPeriod] = useState<AnalyticsPeriod>("30d");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [snapshot, setSnapshot] = useState<WebsiteAnalyticsSnapshot>(
-    initialSnapshot ?? getMockAnalyticsSnapshot("30d"),
-  );
-  const [source, setSource] = useState<"live" | "mock">(
-    initialSnapshot ? "live" : "mock",
+    initialSnapshot ?? getEmptyAnalyticsSnapshot("30d"),
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -168,19 +144,13 @@ export function WebsiteAnalyticsPanel({
         ok?: boolean;
         error?: string;
         snapshot?: WebsiteAnalyticsSnapshot;
-        source?: "live" | "mock";
       };
       if (!response.ok || !data.ok || !data.snapshot) {
         throw new Error(data.error || "Analytics konnten nicht geladen werden.");
       }
       setSnapshot(data.snapshot);
-      setSource(data.source ?? "live");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ladefehler.");
-      if (!initialSnapshot) {
-        setSnapshot(getMockAnalyticsSnapshot(nextPeriod));
-        setSource("mock");
-      }
     } finally {
       setIsRefreshing(false);
     }
@@ -197,10 +167,10 @@ export function WebsiteAnalyticsPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
 
-  const hasStoredLeads = storedLeads.length > 0;
-  const leadsSource: "mock" | "live" | "mixed" =
-    source === "live" || hasStoredLeads ? "live" : "mock";
-  const trafficSource: "mock" | "live" | "mixed" = source;
+  const hasData =
+    snapshot.kpis.visitors > 0 ||
+    snapshot.kpis.leads > 0 ||
+    snapshot.leadSources.length > 0;
 
   const maxCountryVisitors = Math.max(
     ...(snapshot.countries?.map((row) => row.visitors) ?? [0]),
@@ -267,15 +237,25 @@ export function WebsiteAnalyticsPanel({
         </div>
       </div>
 
-      <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
-        <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-        <p>
-          <strong>WordPress-Integration:</strong> Installieren Sie das TZ Dashboard
-          Connector Plugin auf {siteConfig.domain}. Es sendet Seitenaufrufe,
-          CTA-Klicks und Formular-Leads an{" "}
-          <code className="rounded bg-white/60 px-1">/api/wordpress/*</code>.
-        </p>
-      </div>
+      {!hasData ? (
+        <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <p>
+            Noch keine Analytics-Daten. Installieren und konfigurieren Sie das TZ
+            Dashboard Connector Plugin auf {siteConfig.domain}. Besucher müssen
+            Cookies akzeptieren (Real Cookie Banner), damit Tracking startet.
+          </p>
+        </div>
+      ) : (
+        <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <p>
+            Live-Daten von {siteConfig.domain}. Events werden über{" "}
+            <code className="rounded bg-white/60 px-1">/api/wordpress/*</code>{" "}
+            empfangen.
+          </p>
+        </div>
+      )}
 
       <div
         className={cn(
@@ -287,17 +267,15 @@ export function WebsiteAnalyticsPanel({
         <KpiCard
           label="Besucher"
           value={formatNumber(snapshot.kpis.visitors)}
-          source={trafficSource}
           changePct={snapshot.kpis.visitorsChangePct}
           icon={<Users className="h-4 w-4 text-brand-accent" aria-hidden />}
         />
         <KpiCard
           label="Leads"
           value={formatNumber(snapshot.kpis.leads)}
-          source={leadsSource}
           changePct={snapshot.kpis.leadsChangePct}
           footer={
-            hasStoredLeads
+            storedLeads.length > 0
               ? `${storedLeads.length} gespeicherte Anfrage(n)`
               : "Warten auf WordPress-Formulare"
           }
@@ -308,14 +286,12 @@ export function WebsiteAnalyticsPanel({
         <KpiCard
           label="Conversion Rate"
           value={`${snapshot.kpis.conversionRate.toFixed(2)}%`}
-          source={trafficSource}
           footer="Leads ÷ Besucher"
           icon={<Percent className="h-4 w-4 text-brand-accent" aria-hidden />}
         />
         <KpiCard
           label="Consent Rate"
           value={`${snapshot.kpis.consentRate}%`}
-          source={trafficSource}
           footer="Cookie-Zustimmung (Real Cookie Banner)"
           icon={<Eye className="h-4 w-4 text-brand-accent" aria-hidden />}
         />
@@ -325,12 +301,9 @@ export function WebsiteAnalyticsPanel({
         <SectionCard
           title="Leads nach Quelle"
           description="WhatsApp, Anruf, Kontaktformular — welche Kanäle funktionieren?"
-          action={<DataSourceBadge source={leadsSource} />}
         >
           {snapshot.leadSources.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-black/10 px-4 py-10 text-center text-sm text-foreground/55">
-              Noch keine Leads. WordPress-Formulare senden automatisch hierher.
-            </div>
+            <EmptyState message="Noch keine Leads. WordPress-Formulare senden automatisch hierher." />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full table-fixed border-collapse text-left text-sm">
@@ -419,51 +392,46 @@ export function WebsiteAnalyticsPanel({
 
       <div className="grid gap-4 lg:grid-cols-3">
         <SectionCard title="Besucher nach Land">
-          <ul className="space-y-3">
-            {snapshot.countries.map((row) => (
-              <li key={row.key}>
-                <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
-                  <span className="font-semibold text-brand-dark">{row.label}</span>
-                  <span className="text-foreground/60">
-                    {formatNumber(row.visitors)} ({row.sharePct}%)
-                  </span>
-                </div>
-                <Bar value={row.visitors} max={maxCountryVisitors} />
-              </li>
-            ))}
-          </ul>
+          {snapshot.countries.length === 0 ? (
+            <EmptyState message="Noch keine Besucherdaten." />
+          ) : (
+            <ul className="space-y-3">
+              {snapshot.countries.map((row) => (
+                <li key={row.key}>
+                  <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
+                    <span className="font-semibold text-brand-dark">{row.label}</span>
+                    <span className="text-foreground/60">
+                      {formatNumber(row.visitors)} ({row.sharePct}%)
+                    </span>
+                  </div>
+                  <Bar value={row.visitors} max={maxCountryVisitors} />
+                </li>
+              ))}
+            </ul>
+          )}
         </SectionCard>
 
         <SectionCard title="Geräte">
-          <ul className="space-y-3">
-            {snapshot.devices.map((row) => (
-              <li key={row.key}>
-                <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
-                  <span className="font-semibold text-brand-dark">{row.label}</span>
-                  <span className="text-foreground/60">
-                    {formatNumber(row.visitors)} ({row.sharePct}%)
-                  </span>
-                </div>
-                <Bar value={row.visitors} max={maxDeviceVisitors} />
-              </li>
-            ))}
-          </ul>
+          {snapshot.devices.length === 0 ? (
+            <EmptyState message="Noch keine Gerätedaten." />
+          ) : (
+            <ul className="space-y-3">
+              {snapshot.devices.map((row) => (
+                <li key={row.key}>
+                  <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
+                    <span className="font-semibold text-brand-dark">{row.label}</span>
+                    <span className="text-foreground/60">
+                      {formatNumber(row.visitors)} ({row.sharePct}%)
+                    </span>
+                  </div>
+                  <Bar value={row.visitors} max={maxDeviceVisitors} />
+                </li>
+              ))}
+            </ul>
+          )}
         </SectionCard>
 
-        <SectionCard
-          title="WordPress Website"
-          action={
-            <a
-              href={siteConfig.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-black/15 px-3 py-1.5 text-xs font-bold text-brand-dark transition-colors hover:border-brand-accent/50"
-            >
-              Website öffnen
-              <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-            </a>
-          }
-        >
+        <SectionCard title="WordPress Website">
           <ul className="space-y-2 text-sm text-foreground/70">
             <li className="rounded-lg border border-black/10 px-3 py-2">
               <strong>Domain:</strong> {siteConfig.domain}
@@ -478,53 +446,67 @@ export function WebsiteAnalyticsPanel({
               <strong>Leads:</strong> POST /api/wordpress/leads
             </li>
           </ul>
+          <a
+            href={siteConfig.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-black/15 px-3 py-1.5 text-xs font-bold text-brand-dark transition-colors hover:border-brand-accent/50"
+          >
+            Website öffnen
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+          </a>
         </SectionCard>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <SectionCard title="CTA Performance">
-          <ul className="space-y-4">
-            {snapshot.ctas.map((row) => (
-              <li key={row.id}>
-                <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
-                  <span className="font-semibold text-brand-dark">{row.label}</span>
-                  <span className="text-foreground/60">
-                    {formatNumber(row.clicks)} Klicks
-                    {row.conversions > 0 ? ` · ${row.conversions} Leads` : ""}
-                  </span>
-                </div>
-                <Bar value={row.clicks} max={maxCtaClicks} />
-              </li>
-            ))}
-          </ul>
+          {snapshot.ctas.length === 0 ? (
+            <EmptyState message="Noch keine CTA-Klicks erfasst." />
+          ) : (
+            <ul className="space-y-4">
+              {snapshot.ctas.map((row) => (
+                <li key={row.id}>
+                  <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
+                    <span className="font-semibold text-brand-dark">{row.label}</span>
+                    <span className="text-foreground/60">
+                      {formatNumber(row.clicks)} Klicks
+                      {row.conversions > 0 ? ` · ${row.conversions} Leads` : ""}
+                    </span>
+                  </div>
+                  <Bar value={row.clicks} max={maxCtaClicks} />
+                </li>
+              ))}
+            </ul>
+          )}
         </SectionCard>
 
         <SectionCard title="Top Seiten">
-          <ul className="divide-y divide-black/5">
-            {snapshot.topPages.map((row) => (
-              <li
-                key={row.path}
-                className="flex items-center justify-between gap-3 py-2.5 text-sm"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-brand-dark">
-                    {row.label}
-                  </p>
-                  <p className="truncate text-xs text-foreground/50">
-                    {row.path}
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="font-semibold text-brand-dark">
-                    {formatNumber(row.views)}
-                  </p>
-                  <p className="text-xs text-foreground/50">
-                    {row.engagementRate}% engaged
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {snapshot.topPages.length === 0 ? (
+            <EmptyState message="Noch keine Seitenaufrufe erfasst." />
+          ) : (
+            <ul className="divide-y divide-black/5">
+              {snapshot.topPages.map((row) => (
+                <li
+                  key={row.path}
+                  className="flex items-center justify-between gap-3 py-2.5 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-brand-dark">
+                      {row.label}
+                    </p>
+                    <p className="truncate text-xs text-foreground/50">
+                      {row.path}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-semibold text-brand-dark">
+                      {formatNumber(row.views)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </SectionCard>
       </div>
     </div>

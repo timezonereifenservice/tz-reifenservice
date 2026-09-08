@@ -1,25 +1,11 @@
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import { mapLeadRow, toLeadListItem, type LeadRow } from "@/lib/leads/map";
 import type { Lead, LeadInput, LeadListItem, LeadStatus } from "@/lib/leads/types";
-import { MOCK_LEADS } from "@/lib/leads/mock-data";
 
 const LEAD_SELECT =
   "id, created_at, updated_at, type, status, form_key, source_page, source_label, full_name, email, phone, service, message, source" as const;
 
-function memoryLeadsFromMock(): Lead[] {
-  return MOCK_LEADS.map((item) => ({
-    ...item,
-    message: "",
-    updatedAt: item.createdAt,
-  }));
-}
-
-let memoryLeads: Lead[] | null = null;
-
-function getMemoryLeads() {
-  if (!memoryLeads) memoryLeads = memoryLeadsFromMock();
-  return memoryLeads;
-}
+const memoryLeads: Lead[] = [];
 
 export async function createLead(input: LeadInput): Promise<Lead> {
   if (!isSupabaseConfigured()) {
@@ -41,7 +27,7 @@ export async function createLead(input: LeadInput): Promise<Lead> {
       message: input.message ?? "",
       source: input.source ?? "wordpress",
     };
-    getMemoryLeads().unshift(lead);
+    memoryLeads.unshift(lead);
     return lead;
   }
 
@@ -70,7 +56,7 @@ export async function createLead(input: LeadInput): Promise<Lead> {
 
 export async function listLeads(): Promise<LeadListItem[]> {
   if (!isSupabaseConfigured()) {
-    return getMemoryLeads().map(toLeadListItem);
+    return memoryLeads.map(toLeadListItem);
   }
 
   const supabase = getSupabaseAdmin();
@@ -85,7 +71,7 @@ export async function listLeads(): Promise<LeadListItem[]> {
 
 export async function getLeadById(id: string): Promise<Lead | null> {
   if (!isSupabaseConfigured()) {
-    return getMemoryLeads().find((l) => l.id === id) ?? null;
+    return memoryLeads.find((l) => l.id === id) ?? null;
   }
 
   const supabase = getSupabaseAdmin();
@@ -105,7 +91,7 @@ export async function updateLeadStatus(
   status: LeadStatus,
 ): Promise<Lead> {
   if (!isSupabaseConfigured()) {
-    const lead = getMemoryLeads().find((l) => l.id === id);
+    const lead = memoryLeads.find((l) => l.id === id);
     if (!lead) throw new Error("Lead not found");
     lead.status = status;
     lead.updatedAt = new Date().toISOString();

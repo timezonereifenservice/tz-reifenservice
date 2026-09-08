@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { insertAnalyticsEvent } from "@/lib/analytics/storage";
 import type { AnalyticsEventType } from "@/lib/analytics/types";
+import { wordpressCorsJson, wordpressCorsOptions } from "@/lib/wordpress-cors";
 
 export const runtime = "nodejs";
 
@@ -16,22 +16,16 @@ function asString(value: unknown) {
 
 function verifyWordPressApiKey(request: Request) {
   const expected = process.env.WORDPRESS_API_KEY?.trim();
-  if (!expected) return true; // dev mode — no key required
+  if (!expected) return true;
   const provided =
     request.headers.get("x-tz-api-key") ||
     request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   return provided === expected;
 }
 
-/**
- * WordPress → Dashboard analytics ingestion.
- * POST /api/wordpress/analytics
- *
- * Body: { eventType, path, ctaId?, referrer?, sessionId?, visitorId?, consentValue? }
- */
 export async function POST(request: Request) {
   if (!verifyWordPressApiKey(request)) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return wordpressCorsJson({ ok: false, error: "Unauthorized" }, 401);
   }
 
   try {
@@ -39,17 +33,11 @@ export async function POST(request: Request) {
     const eventType = asString(body.eventType) as AnalyticsEventType;
 
     if (!ALLOWED_TYPES.includes(eventType)) {
-      return NextResponse.json(
-        { ok: false, error: "Invalid eventType." },
-        { status: 400 },
-      );
+      return wordpressCorsJson({ ok: false, error: "Invalid eventType." }, 400);
     }
 
     if (eventType === "cta_click" && !asString(body.ctaId)) {
-      return NextResponse.json(
-        { ok: false, error: "ctaId required for cta_click." },
-        { status: 400 },
-      );
+      return wordpressCorsJson({ ok: false, error: "ctaId required for cta_click." }, 400);
     }
 
     const event = await insertAnalyticsEvent({
@@ -74,23 +62,13 @@ export async function POST(request: Request) {
       source: "wordpress",
     });
 
-    return NextResponse.json({ ok: true, id: event.id });
+    return wordpressCorsJson({ ok: true, id: event.id });
   } catch (error) {
     console.error("[api/wordpress/analytics]", error);
-    return NextResponse.json(
-      { ok: false, error: "Could not record event." },
-      { status: 500 },
-    );
+    return wordpressCorsJson({ ok: false, error: "Could not record event." }, 500);
   }
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, X-TZ-API-Key, Authorization",
-    },
-  });
+  return wordpressCorsOptions();
 }

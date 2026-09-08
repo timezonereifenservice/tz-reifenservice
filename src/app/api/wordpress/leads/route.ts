@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { createLead } from "@/lib/leads/storage";
 import type { LeadType } from "@/lib/leads/types";
+import { wordpressCorsJson, wordpressCorsOptions } from "@/lib/wordpress-cors";
 
 export const runtime = "nodejs";
 
@@ -27,23 +27,16 @@ function resolveLeadType(formKey: string, typeHint?: string): LeadType {
   return "contact";
 }
 
-/**
- * WordPress → Dashboard lead ingestion.
- * POST /api/wordpress/leads
- *
- * Body: { formKey, fullName?, email?, phone?, service?, message?, sourcePage?, sourceLabel?, type? }
- */
 export async function POST(request: Request) {
   if (!verifyWordPressApiKey(request)) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return wordpressCorsJson({ ok: false, error: "Unauthorized" }, 401);
   }
 
   try {
     const body = (await request.json()) as Record<string, unknown>;
 
-    // Honeypot for WP forms
     if (asString(body.website)) {
-      return NextResponse.json({ ok: true });
+      return wordpressCorsJson({ ok: true });
     }
 
     const formKey = asString(body.formKey) || "contact-form";
@@ -52,9 +45,9 @@ export async function POST(request: Request) {
     const fullName = asString(body.fullName) || asString(body.name);
 
     if (!email && !phone && !fullName) {
-      return NextResponse.json(
+      return wordpressCorsJson(
         { ok: false, error: "At least name, email, or phone is required." },
-        { status: 400 },
+        400,
       );
     }
 
@@ -71,23 +64,13 @@ export async function POST(request: Request) {
       source: "wordpress",
     });
 
-    return NextResponse.json({ ok: true, id: lead.id });
+    return wordpressCorsJson({ ok: true, id: lead.id });
   } catch (error) {
     console.error("[api/wordpress/leads]", error);
-    return NextResponse.json(
-      { ok: false, error: "Could not save lead." },
-      { status: 500 },
-    );
+    return wordpressCorsJson({ ok: false, error: "Could not save lead." }, 500);
   }
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, X-TZ-API-Key, Authorization",
-    },
-  });
+  return wordpressCorsOptions();
 }

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "migrate": "node scripts/migrate.cjs",
-    "seed:admin": "node scripts/seed-admin-user.cjs"
+    "seed:admin": "node scripts/seed-admin-user.cjs",
+    "db:clean": "node scripts/clean-db.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
